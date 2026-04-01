@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cashflow - Iniciar Sesión</title>
+    <meta charset="UTF-8">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 100px; font-family: sans-serif;">
+        <h2>Bienvenido a Cashflow</h2>
+        <p>Usa tu cuenta de Google para registrarte</p>
+        <button id="btn-login" style="padding: 15px 30px; cursor: pointer; background: #4285F4; color: white; border: none; border-radius: 5px;">
+            Entrar con Google
+        </button>
+        <p id="mensaje" style="color: blue; display: none;">Procesando acceso...</p>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6C1-nRkNM-B1WcP7NjUWQ1KiNilNVkRk",
+            authDomain: "flujodecajasotomayorayala.firebaseapp.com",
+            projectId: "flujodecajasotomayorayala",
+            storageBucket: "flujodecajasotomayorayala.firebasestorage.app",
+            messagingSenderId: "694232278404",
+            appId: "1:694232278404:web:e85ac3438ce7bc3971a9d1"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        document.getElementById('btn-login').onclick = () => {
+            document.getElementById('mensaje').style.display = 'block';
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            auth.signInWithPopup(provider).then((result) => {
+                const user = result.user;
+                
+                const userRef = db.collection("usuarios").doc(user.uid);
+
+                userRef.get().then((doc) => {
+                    if (doc.exists && doc.data().rol && doc.data().rol !== "Pendiente") {
+                        // YA ES USUARIO AUTORIZADO
+                        window.location.href = "registro.html";
+                    } else {
+                        // ES NUEVO O PENDIENTE: Guardamos y ESPERAMOS al éxito (.then)
+                        userRef.set({
+                            nombre: user.displayName,
+                            email: user.email,
+                            rol: doc.exists ? doc.data().rol : "Pendiente",
+                            nivel: doc.exists ? doc.data().nivel : 0
+                        }, { merge: true }).then(() => {
+                            // Solo cuando se guardó con éxito, cambiamos de página
+                            console.log("Usuario guardado con éxito");
+                            window.location.href = "espera.html";
+                        }).catch((error) => {
+                            alert("Error al guardar: " + error.message);
+                        });
+                    }
+                });
+            }).catch((error) => {
+                alert("Error de Google: " + error.message);
+            });
+        };
+    </script>
+</body>
+</html>

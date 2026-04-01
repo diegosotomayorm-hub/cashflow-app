@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashflow - Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; background: #f4f7f6; }
+        .sidebar { width: 250px; height: 100vh; background: #2c3e50; color: white; padding: 20px; position: fixed; }
+        .main-content { margin-left: 280px; padding: 40px; width: 100%; }
+        .card-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .card h3 { margin: 10px 0; color: #2c3e50; }
+        .admin-only { display: none; border-left: 4px solid #e74c3c; } /* Para funciones de Directorio */
+        .btn-logout { background: #e74c3c; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; margin-top: 20px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>CASHFLOW</h2>
+        <p id="user-name">Cargando...</p>
+        <hr>
+        <nav>
+            <p><strong>MENÚ</strong></p>
+            <div onclick="location.href='dashboard.html'" style="cursor:pointer">🏠 Inicio</div><br>
+            <div class="admin-only" id="menu-config" onclick="location.href='configuracion.html'" style="cursor:pointer">⚙️ Configuración</div>
+        </nav>
+        <button class="btn-logout" onclick="cerrarSesion()">Cerrar Sesión</button>
+    </div>
+
+    <div class="main-content">
+        <h1 id="bienvenida">Panel de Control</h1>
+        <p>Selecciona una acción para continuar:</p>
+
+        <div class="card-container">
+            <div class="card" onclick="location.href='seleccion_unidad.html'">
+                <div style="font-size: 40px;">📝</div>
+                <h3>Registrar Movimiento</h3>
+                <p>Ingresos y Egresos por unidad</p>
+            </div>
+
+            <div class="card" onclick="location.href='saldos.html'">
+                <div style="font-size: 40px;">📊</div>
+                <h3>Saldos en Cajas</h3>
+                <p>Vista consolidada de efectivo y bancos</p>
+            </div>
+
+            <div class="card admin-only" id="card-admin" onclick="location.href='configuracion.html'">
+                <div style="font-size: 40px;">🛠️</div>
+                <h3>Gestión de Usuarios</h3>
+                <p>Niveles y Unidades de Negocio</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PEGA TU CONFIGURACIÓN DE FIREBASE AQUÍ
+        const firebaseConfig = {
+            apiKey: "AIzaSyD6C1-nRkNM-B1WcP7NjUWQ1KiNilNVkRk",
+            authDomain: "flujodecajasotomayorayala.firebaseapp.com",
+            projectId: "flujodecajasotomayorayala",
+            storageBucket: "flujodecajasotomayorayala.firebasestorage.app",
+            messagingSenderId: "694232278404",
+            appId: "1:694232278404:web:e85ac3438ce7bc3971a9d1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection("usuarios").doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        document.getElementById('user-name').innerText = data.nombre;
+                        document.getElementById('bienvenida').innerText = "Bienvenido, " + data.rol;
+
+                        // HERENCIA DE PODER: Si es Nivel 100, mostramos opciones de Admin
+                        if (data.nivel >= 100) {
+                            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+                        }
+                    } else {
+                        window.location.href = "espera.html";
+                    }
+                });
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        function cerrarSesion() {
+            auth.signOut().then(() => { window.location.href = "login.html"; });
+        }
+    </script>
+</body>
+</html>
